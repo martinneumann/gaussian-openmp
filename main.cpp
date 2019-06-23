@@ -1,52 +1,108 @@
 #include <iostream>
 #include <typeinfo>
+#include <math.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-cv::Mat convertToYCbCr(cv::Mat image) {
+void convertToYCbCr(cv::Mat image) {
     // converts an RGB image to YCbCr
     // cv::Mat: B-G-R
     std::cout << "Converting image to YCbCr color space." << std::endl;
     int i, j;
-    for (i = 0; i < image.cols; i++) {
+    for (i = 0; i <= image.cols; i++) {
         // std::cout << "At column " << i << " of total " << image.cols << std::endl;
-        for (j = 0; j < image.rows; j++) {
+        for (j = 0; j <= image.rows; j++) {
 
             // R, G, B values
-            auto R = image.at<cv::Vec3d>(j,i)[2];
-            auto G = image.at<cv::Vec3d>(j,i)[1];
-            auto B = image.at<cv::Vec3d>(j,i)[0];
+            auto R = image.at<cv::Vec3b>(j, i)[2];
+            auto G = image.at<cv::Vec3b>(j, i)[1];
+            auto B = image.at<cv::Vec3b>(j, i)[0];
 
             // Y'
-            // image.at<cv::Vec3d>(j,i)[0] = 16 + (65.481 * R + 128.553 * G + 24.966 * B);
-            image.at<cv::Vec3d>(j,i)[0] = 0.299 * R + 0.587 * G + 0.114 * B;
+            image.at<cv::Vec3b>(j,i)[0] = 0.299 * R + 0.587 * G + 0.114 * B + 16;
 
             // Cb
-            // image.at<cv::Vec3d>(j,i)[1] = 128 + (-37.979 * R - 74.203 * G + 112 * B);
-            image.at<cv::Vec3d>(j,i)[2] = (R - image.at<cv::Vec3d>(j,i)[0]) * 0.713 + 0.5;
+            image.at<cv::Vec3b>(j,i)[1] = 128 + (-0.169 * R -0.331 * G + 0.5 * B);
 
             // Cr
-            image.at<cv::Vec3d>(j,i)[1] = (B - image.at<cv::Vec3d>(j,i)[0]) * 0.564 + 0.5;
+            image.at<cv::Vec3b>(j,i)[2] = 128 + (0.5 * R -0.419 * G -0.081 * B);
+            // std::cout << "At conversion: Y = " << Y << ", Cb = " << Cb << ", " 
+            //    << Cr << std::endl;
         }
     }
     std::cout << "Converting finished." << std::endl;
-    return image;
+    return;
 }
 
-cv::Mat applyGaussianBlur(cv::Mat image) {
+
+void applyGaussianBlur(cv::Mat image) {
     std::cout << "Applying Gaussian Blur on image." << std::endl;
-    int i, j;
+    std::cout << "Creating kernel." << std::endl;
 
-    for (i = 0; i < image.cols; i++) {
-        for (j = 0; j < image.rows; j++) {
-        
 
+    double sigma = 1;
+    int W = 5;
+    double kernel[W][W];
+    double mean = W/2;
+    double sum = 0.0; // For accumulating the kernel values
+    for (int x = 0; x < W; ++x)
+        for (int y = 0; y < W; ++y) {
+            kernel[x][y] = exp( -0.5 * (pow((x-mean)/sigma, 2.0) + pow((y-mean)/sigma,2.0)) )
+                / (2 * M_PI * sigma * sigma);
+
+            // Accumulate the kernel values
+            sum += kernel[x][y];
         }
+
+    // Normalize the kernel
+    for (int x = 0; x < W; ++x)
+        for (int y = 0; y < W; ++y)
+            kernel[x][y] /= sum;
+    std::cout << "Kernel is: " << std::endl;
+    for (int a = 0; a < W; a++) {
+        for (int b = 0; b < W; b++) {
+            std::cout << kernel[a][b] << " ";
+        }
+        std::cout << std::endl;
     }
 
-    return image;
+
+    std::cout << "Applying kernel." << std::endl;
+    int i, j;
+    int radius = W;
+
+    // 1) loop over all pixels
+    for (i = 0; i < image.cols; i++) {
+        // std::cout << std::endl << "Column " << i << std::endl;
+        for (j = 0; j < image.rows; j++) {
+            // std::cout << j << ", ";
+
+            // 2) loop over kernel
+            int iy;
+            int ix;
+            double val1 = 0, val2 = 0, val3 = 0;
+            for (iy = 0; iy <= radius; iy++) {
+                // looping over y value of kernel
+
+                for (ix = 0; ix <= radius; ix++) {
+                    // looping over x value of kernel
+
+                    val1 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[0] * kernel[ix][iy];
+                    val2 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[1] * kernel[ix][iy];
+                    val3 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[2] * kernel[ix][iy];
+                    // std::cout << kernel[ix][iy] << ", ";
+                    // std::cout << " -> " << val1 << "; ";
+                } 
+                // std::cout << std::endl;
+            }
+            image.at<cv::Vec3b>(j, i)[0] = val1;
+            image.at<cv::Vec3b>(j, i)[1] = val2;
+            image.at<cv::Vec3b>(j, i)[2] = val3;
+        }
+    }
+    return;
 }
 
 int main(int argc, char *argv[]) {
@@ -58,6 +114,7 @@ int main(int argc, char *argv[]) {
 
     // cv::Mat image;
     auto image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    cv::imwrite("original.png", image);
 
     std::cout << "type of image is: " << typeid(image).name() << std::endl;
 
@@ -84,13 +141,24 @@ int main(int argc, char *argv[]) {
      * 1) Color space conversion RGB -> YCbCr
      *
      */
-    
+
     // loop over array
-    auto convertedImage = convertToYCbCr(image);
+    // auto convertedImage = convertToYCbCr(image);
+    // cv::imwrite("converted.png", convertedImage);
+    applyGaussianBlur(image);
+    cv::imwrite("gaussian.png", image);
+    // auto gaussianBlurComparison = applyGaussianBlur(image);
+    // cv::imwrite("gaussiancomparison.png", gaussianBlurComparison);
     cv::Mat newImage;
-    cv::cvtColor(image, newImage, cv::COLOR_BGR2YCrCb);
-    cv::imwrite("converted.png", convertedImage);
+    cv::cvtColor(cv::imread("dice.png"), newImage, cv::COLOR_BGR2YCrCb);
     cv::imwrite("comparison.png", newImage);
+    std::cout << "Image dimension: " << newImage.dims << std::endl
+        << "Image rows: " << newImage.rows << std::endl
+        << "Image columns: " << newImage.cols << std::endl
+        << "Channels: " << newImage.channels() << std::endl
+        << "Size: " << newImage.size() << std::endl
+        << "Type: " << newImage.type() << std::endl;
+    std::cout << "type of comparison image is: " << typeid(newImage).name() << std::endl;
     // imshow( "Display window", convertedImage);                   // Show our image inside it.
     // cv::waitKey(0);
     return  0;
