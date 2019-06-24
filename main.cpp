@@ -72,6 +72,7 @@ void applyGaussianBlur(cv::Mat image) {
     std::cout << "Applying kernel." << std::endl;
     int i, j;
     int radius = W;
+    double val1 = 0, val2 = 0, val3 = 0;
 
     // 1) loop over all pixels
     for (i = 0; i < image.cols; i++) {
@@ -82,24 +83,32 @@ void applyGaussianBlur(cv::Mat image) {
             // 2) loop over kernel
             int iy;
             int ix;
-            double val1 = 0, val2 = 0, val3 = 0;
-            for (iy = 0; iy <= radius; iy++) {
+            // std::cout << "New kernel loop for pixel " << j << "," << i << std::endl;
+            for (iy = int(-radius/2); iy <= int(radius/2); iy++) {
                 // looping over y value of kernel
-
-                for (ix = 0; ix <= radius; ix++) {
+                for (ix = int(-radius/2); ix <= int(radius/2); ix++) {
                     // looping over x value of kernel
-
-                    val1 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[0] * kernel[ix][iy];
-                    val2 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[1] * kernel[ix][iy];
-                    val3 += image.at<cv::Vec3b>(int((j-iy)/2), int((i-ix)/2))[2] * kernel[ix][iy];
+                    
+                    int x = std::min(image.rows, std::max(0, i-ix));
+                    int y = std::min(image.cols, std::max(0, j-iy));
+                   /* 
+                    std::cout << "Applying at positions: " << y << "," << x;
+                    std::cout << ". Value: " << int(image.at<cv::Vec3b>(y,x)[0]) << " * "
+                        << kernel[ix][iy] << std::endl;
+                    */
+                    val1 += image.at<cv::Vec3b>(y, x)[0] * kernel[ix][iy];
+                    val2 += image.at<cv::Vec3b>(y, x)[1] * kernel[ix][iy];
+                    val3 += image.at<cv::Vec3b>(y, x)[2] * kernel[ix][iy];
                     // std::cout << kernel[ix][iy] << ", ";
-                    // std::cout << " -> " << val1 << "; ";
                 } 
                 // std::cout << std::endl;
             }
+
             image.at<cv::Vec3b>(j, i)[0] = val1;
             image.at<cv::Vec3b>(j, i)[1] = val2;
             image.at<cv::Vec3b>(j, i)[2] = val3;
+            val1 = val2 = val3 = 0;
+            // std::cout << val1 << " " << val2 << " " << val3 << " | " ;
         }
     }
     return;
