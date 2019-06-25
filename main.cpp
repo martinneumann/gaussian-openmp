@@ -3,6 +3,7 @@
 #include <math.h>
 #include <cstdio>
 #include <omp.h>
+#include <ctime>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -188,7 +189,7 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image) {
         std::cout << std::endl;
     }
 
-
+    omp_set_num_threads(omp_get_num_procs());
 
     std::cout << "Applying kernel." << std::endl;
     int i, j;
@@ -196,9 +197,9 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image) {
     double val1 = 0, val2 = 0, val3 = 0;
 
     // 1) loop over all pixels
-    #pragma omp parallel for shared(image,returnImage) private(i,j,val1,val2,val3)
+    #pragma omp parallel for shared(image) private(i,j,val1,val2,val3)
     for (i = 0; i < image.cols; i++) {
-        // std::cout << std::endl << "Column " << i << std::endl;
+        // std::cout << std::endl << "Column " << i << " Thread " << omp_get_thread_num() << std::endl;
         for (j = 0; j < image.rows; j++) {
             // std::cout << j << ", ";
 
@@ -279,25 +280,53 @@ int main(int argc, char *argv[]) {
      * 1) Color space conversion RGB -> YCbCr
      *
      */
-
+    double duration, startTime;
+    startTime = omp_get_wtime();
+    std::clock_t start;
     // loop over array
-    // convertToYCbCr_omp(image);
-    // cv::imwrite("converted.png", image);
+    std::cout << "TESTS STARTING\nFirst test: BGR -> YCbCr without parallelization. Starting timer..." 
+        << std::endl;
+    start = std::clock();
+    convertToYCbCr(image);
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Conversion without OpenMP took " << duration << " seconds.\n" << std::endl;
+    cv::imwrite("converted.png", image);
+    imshow( "Display window", image);                   // Show our image inside it.
+    cv::waitKey(0);
+
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    std::cout << "Second test: BGR -> YCbCr WITH parallelization. Starting timer..." 
+        << std::endl;
+    start = std::clock();
+    startTime = omp_get_wtime();
+    convertToYCbCr_omp(image);
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Conversion WITH OpenMP took " << duration << " seconds.\n" << std::endl;
+    imshow( "Display window", image);                   // Show our image inside it.
+    cv::imwrite("converted_omp.png", image);
+    cv::waitKey(0);
+
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    std::cout << "Third test: Gaussian blur without parallelization. Starting timer..."
+        << std::endl;
+    start = std::clock();
+    startTime = omp_get_wtime();
     auto gaussianImage = applyGaussianBlur(image);
-    //cv::imwrite("gaussian.png", image);
-    // auto gaussianBlurComparison = applyGaussianBlur(image);
-    // cv::imwrite("gaussiancomparison.png", gaussianBlurComparison);
-    cv::Mat newImage;
-    cv::cvtColor(cv::imread("dice.png"), newImage, cv::COLOR_BGR2YCrCb);
-    cv::imwrite("comparison.png", newImage);
-    std::cout << "Image dimension: " << newImage.dims << std::endl
-        << "Image rows: " << newImage.rows << std::endl
-        << "Image columns: " << newImage.cols << std::endl
-        << "Channels: " << newImage.channels() << std::endl
-        << "Size: " << newImage.size() << std::endl
-        << "Type: " << newImage.type() << std::endl;
-    std::cout << "type of comparison image is: " << typeid(newImage).name() << std::endl;
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Blurring without OpenMP took " << duration << " seconds.\n" << std::endl;
     imshow( "Display window", gaussianImage);                   // Show our image inside it.
+    cv::imwrite("gaussian.png", gaussianImage);
+    cv::waitKey(0);
+
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    std::cout << "Fourth test: Gaussian blur WITH parallelization. Starting timer..."
+        << std::endl;
+    startTime = omp_get_wtime();
+    gaussianImage = applyGaussianBlur_omp(image);
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Blurring with OpenMP took " << duration << " seconds.\n" << std::endl;
+    imshow( "Display window", gaussianImage);                   // Show our image inside it.
+    cv::imwrite("gaussian_omp.png", gaussianImage);
     cv::waitKey(0);
     return  0;
 }
