@@ -1,0 +1,2 @@
+g++ -Wall main.cpp -o main -fopenmp `pkg-config --libs opencv`
+

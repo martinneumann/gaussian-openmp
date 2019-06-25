@@ -2,6 +2,7 @@
 #include <typeinfo>
 #include <math.h>
 #include <cstdio>
+#include <omp.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -37,6 +38,39 @@ void convertToYCbCr(cv::Mat image) {
     return;
 }
 
+void convertToYCbCr_omp(cv::Mat image) {
+    // converts an RGB image to YCbCr
+    // cv::Mat: B-G-R
+    std::cout << "Converting image to YCbCr color space using OpenMP." << std::endl;
+    std::cout << "Number of processors: " << omp_get_num_procs() << std::endl;
+    omp_set_num_threads(omp_get_num_procs());
+        int i, j;
+        cv::Mat tmpData;
+        #pragma omp parallel for shared(image) private(i,j)
+        for (i = 0; i <= image.cols; i++) {
+            // std::cout << "This is thread " << omp_get_thread_num() << 
+            // ", At column " << i << " of total " << image.cols << std::endl;
+            for (j = 0; j <= image.rows; j++) {
+
+                // R, G, B values
+                auto R = image.at<cv::Vec3b>(j, i)[2];
+                auto G = image.at<cv::Vec3b>(j, i)[1];
+                auto B = image.at<cv::Vec3b>(j, i)[0];
+
+                // Y'
+                image.at<cv::Vec3b>(j,i)[0] = 0.299 * R + 0.587 * G + 0.114 * B + 16;
+
+                // Cb
+                image.at<cv::Vec3b>(j,i)[1] = 128 + (-0.169 * R -0.331 * G + 0.5 * B);
+
+                // Cr
+                image.at<cv::Vec3b>(j,i)[2] = 128 + (0.5 * R -0.419 * G -0.081 * B);
+            }
+        }
+
+    std::cout << "Converting finished using OpenMP." << std::endl;
+    return;
+}
 
 void applyGaussianBlur(cv::Mat image) {
     std::cout << "Applying Gaussian Blur on image." << std::endl;
@@ -68,7 +102,7 @@ void applyGaussianBlur(cv::Mat image) {
         }
         std::cout << std::endl;
     }
-    
+
 
 
     std::cout << "Applying kernel." << std::endl;
@@ -91,24 +125,24 @@ void applyGaussianBlur(cv::Mat image) {
                 // looping over y value of kernel
                 for (ix = 0; ix < radius; ix++) {
                     // looping over x value of kernel
-                    
+
                     // values for multiplication 
                     int x = std::min(image.cols, std::max(0, i-ix));
                     int y = std::min(image.rows, std::max(0, j-iy));
-                    
-                    
+
+
                     // std::cout << "Applying at positions: " << y << "," << x;
                     /*std::cout << ". Value: " << image.at<cv::Vec3b>(y,x) << " * "
-                        << kernel[ix][iy] << std::endl;
-                        
-                    char str[20];
-                    std::scanf("%s", str);
-                     
-                    */
+                      << kernel[ix][iy] << std::endl;
+
+                      char str[20];
+                      std::scanf("%s", str);
+
+*/
                     val1 += (image.at<cv::Vec3b>(y, x)[0] * kernel[ix][iy]);
                     val2 += (image.at<cv::Vec3b>(y, x)[1] * kernel[ix][iy]);
                     val3 += (image.at<cv::Vec3b>(y, x)[2] * kernel[ix][iy]);
-                   //  std::cout << val1 << ", " << val2 << ", " << val3 << std::endl;
+                    //  std::cout << val1 << ", " << val2 << ", " << val3 << std::endl;
                 } 
                 // std::cout << std::endl;
             }
@@ -161,10 +195,10 @@ int main(int argc, char *argv[]) {
      */
 
     // loop over array
-    // convertToYCbCr(image);
-    // cv::imwrite("converted.png", convertedImage);
-    applyGaussianBlur(image);
-    cv::imwrite("gaussian.png", image);
+    convertToYCbCr_omp(image);
+    cv::imwrite("converted.png", image);
+    //applyGaussianBlur(image);
+    //cv::imwrite("gaussian.png", image);
     // auto gaussianBlurComparison = applyGaussianBlur(image);
     // cv::imwrite("gaussiancomparison.png", gaussianBlurComparison);
     cv::Mat newImage;
