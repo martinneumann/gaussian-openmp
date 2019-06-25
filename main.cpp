@@ -1,6 +1,7 @@
 #include <iostream>
 #include <typeinfo>
 #include <math.h>
+#include <cstdio>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -45,7 +46,7 @@ void applyGaussianBlur(cv::Mat image) {
     double sigma = 1;
     int W = 5;
     double kernel[W][W];
-    double mean = W/2;
+    double mean = W/4;
     double sum = 0.0; // For accumulating the kernel values
     for (int x = 0; x < W; ++x)
         for (int y = 0; y < W; ++y) {
@@ -84,31 +85,37 @@ void applyGaussianBlur(cv::Mat image) {
             int iy;
             int ix;
             // std::cout << "New kernel loop for pixel " << j << "," << i << std::endl;
+
             for (iy = int(-radius/2); iy <= int(radius/2); iy++) {
                 // looping over y value of kernel
                 for (ix = int(-radius/2); ix <= int(radius/2); ix++) {
                     // looping over x value of kernel
                     
-                    int x = std::min(image.rows, std::max(0, i-ix));
-                    int y = std::min(image.cols, std::max(0, j-iy));
-                   /* 
-                    std::cout << "Applying at positions: " << y << "," << x;
-                    std::cout << ". Value: " << int(image.at<cv::Vec3b>(y,x)[0]) << " * "
+                    // values for multiplication 
+                    int x = std::min(image.cols, std::max(0, i-ix));
+                    int y = std::min(image.rows, std::max(0, j-iy));
+                    
+                    
+                    // std::cout << "Applying at positions: " << y << "," << x;
+                    /*std::cout << ". Value: " << image.at<cv::Vec3b>(y,x) << " * "
                         << kernel[ix][iy] << std::endl;
-                    */
-                    val1 += image.at<cv::Vec3b>(y, x)[0] * kernel[ix][iy];
-                    val2 += image.at<cv::Vec3b>(y, x)[1] * kernel[ix][iy];
-                    val3 += image.at<cv::Vec3b>(y, x)[2] * kernel[ix][iy];
-                    // std::cout << kernel[ix][iy] << ", ";
+                        */
+                    char str[20];
+                    //std::scanf("%s", str);
+                     
+                    val1 += (image.at<cv::Vec3b>(y, x)[0] * kernel[iy][ix]);
+                    val2 += (image.at<cv::Vec3b>(y, x)[1] * kernel[iy][ix]);
+                    val3 += (image.at<cv::Vec3b>(y, x)[2] * kernel[iy][ix]);
+                   //  std::cout << val1 << ", " << val2 << ", " << val3 << std::endl;
                 } 
                 // std::cout << std::endl;
             }
 
-            image.at<cv::Vec3b>(j, i)[0] = val1;
-            image.at<cv::Vec3b>(j, i)[1] = val2;
-            image.at<cv::Vec3b>(j, i)[2] = val3;
+            image.at<cv::Vec3b>(j, i)[0] = int(val1);
+            image.at<cv::Vec3b>(j, i)[1] = int(val2);
+            image.at<cv::Vec3b>(j, i)[2] = int(val3);
+            // std::cout << "Finished! " << val1 << " " << val2 << " " << val3 << " | " ;
             val1 = val2 = val3 = 0;
-            // std::cout << val1 << " " << val2 << " " << val3 << " | " ;
         }
     }
     return;
@@ -152,7 +159,7 @@ int main(int argc, char *argv[]) {
      */
 
     // loop over array
-    // auto convertedImage = convertToYCbCr(image);
+    // convertToYCbCr(image);
     // cv::imwrite("converted.png", convertedImage);
     applyGaussianBlur(image);
     cv::imwrite("gaussian.png", image);
@@ -168,7 +175,7 @@ int main(int argc, char *argv[]) {
         << "Size: " << newImage.size() << std::endl
         << "Type: " << newImage.type() << std::endl;
     std::cout << "type of comparison image is: " << typeid(newImage).name() << std::endl;
-    // imshow( "Display window", convertedImage);                   // Show our image inside it.
-    // cv::waitKey(0);
+    imshow( "Display window", image);                   // Show our image inside it.
+    cv::waitKey(0);
     return  0;
 }
