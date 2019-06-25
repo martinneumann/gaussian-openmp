@@ -46,7 +46,7 @@ void applyGaussianBlur(cv::Mat image) {
     double sigma = 1;
     int W = 5;
     double kernel[W][W];
-    double mean = W/4;
+    double mean = W/3;
     double sum = 0.0; // For accumulating the kernel values
     for (int x = 0; x < W; ++x)
         for (int y = 0; y < W; ++y) {
@@ -68,6 +68,7 @@ void applyGaussianBlur(cv::Mat image) {
         }
         std::cout << std::endl;
     }
+    
 
 
     std::cout << "Applying kernel." << std::endl;
@@ -86,9 +87,9 @@ void applyGaussianBlur(cv::Mat image) {
             int ix;
             // std::cout << "New kernel loop for pixel " << j << "," << i << std::endl;
 
-            for (iy = int(-radius/2); iy <= int(radius/2); iy++) {
+            for (iy = 0; iy < radius; iy++) {
                 // looping over y value of kernel
-                for (ix = int(-radius/2); ix <= int(radius/2); ix++) {
+                for (ix = 0; ix < radius; ix++) {
                     // looping over x value of kernel
                     
                     // values for multiplication 
@@ -99,13 +100,14 @@ void applyGaussianBlur(cv::Mat image) {
                     // std::cout << "Applying at positions: " << y << "," << x;
                     /*std::cout << ". Value: " << image.at<cv::Vec3b>(y,x) << " * "
                         << kernel[ix][iy] << std::endl;
-                        */
+                        
                     char str[20];
-                    //std::scanf("%s", str);
+                    std::scanf("%s", str);
                      
-                    val1 += (image.at<cv::Vec3b>(y, x)[0] * kernel[iy][ix]);
-                    val2 += (image.at<cv::Vec3b>(y, x)[1] * kernel[iy][ix]);
-                    val3 += (image.at<cv::Vec3b>(y, x)[2] * kernel[iy][ix]);
+                    */
+                    val1 += (image.at<cv::Vec3b>(y, x)[0] * kernel[ix][iy]);
+                    val2 += (image.at<cv::Vec3b>(y, x)[1] * kernel[ix][iy]);
+                    val3 += (image.at<cv::Vec3b>(y, x)[2] * kernel[ix][iy]);
                    //  std::cout << val1 << ", " << val2 << ", " << val3 << std::endl;
                 } 
                 // std::cout << std::endl;
