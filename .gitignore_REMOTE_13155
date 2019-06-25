@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-*.png *.jpg
-=======
 # Prerequisites
 *.d
 
@@ -33,4 +30,3 @@
 *.exe
 *.out
 *.app
->>>>>>> 4e4712c07e230ec6d1214e3e1e60f0b1860f58a7
