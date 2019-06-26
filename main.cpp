@@ -45,28 +45,27 @@ void convertToYCbCr_omp(cv::Mat image) {
     std::cout << "Converting image to YCbCr color space using OpenMP." << std::endl;
     std::cout << "Number of processors: " << omp_get_num_procs() << std::endl;
     omp_set_num_threads(omp_get_num_procs());
-        int i, j;
-        #pragma omp parallel for shared(image) private(i,j)
-        for (i = 0; i <= image.cols; i++) {
-            // std::cout << "This is thread " << omp_get_thread_num() << 
-            // ", At column " << i << " of total " << image.cols << std::endl;
-            for (j = 0; j <= image.rows; j++) {
+    int i, j;
 
-                // R, G, B values
-                auto R = image.at<cv::Vec3b>(j, i)[2];
-                auto G = image.at<cv::Vec3b>(j, i)[1];
-                auto B = image.at<cv::Vec3b>(j, i)[0];
+    #pragma omp parallel for shared(image) private(i,j)
+    for (i = 0; i <= image.cols; i++) {
+        for (j = 0; j <= image.rows; j++) {
 
-                // Y'
-                image.at<cv::Vec3b>(j,i)[0] = 0.299 * R + 0.587 * G + 0.114 * B + 16;
+            // R, G, B values
+            auto R = image.at<cv::Vec3b>(j, i)[2];
+            auto G = image.at<cv::Vec3b>(j, i)[1];
+            auto B = image.at<cv::Vec3b>(j, i)[0];
 
-                // Cb
-                image.at<cv::Vec3b>(j,i)[1] = 128 + (-0.169 * R -0.331 * G + 0.5 * B);
+            // Y'
+            image.at<cv::Vec3b>(j,i)[0] = 0.299 * R + 0.587 * G + 0.114 * B + 16;
 
-                // Cr
-                image.at<cv::Vec3b>(j,i)[2] = 128 + (0.5 * R -0.419 * G -0.081 * B);
-            }
+            // Cb
+            image.at<cv::Vec3b>(j,i)[1] = 128 + (-0.169 * R -0.331 * G + 0.5 * B);
+
+            // Cr
+            image.at<cv::Vec3b>(j,i)[2] = 128 + (0.5 * R -0.419 * G -0.081 * B);
         }
+    }
 
     std::cout << "Converting finished using OpenMP." << std::endl;
     return;
@@ -95,13 +94,14 @@ cv::Mat applyGaussianBlur(cv::Mat image) {
     for (int x = 0; x < W; ++x)
         for (int y = 0; y < W; ++y)
             kernel[x][y] /= sum;
-    std::cout << "Kernel is: " << std::endl;
-    for (int a = 0; a < W; a++) {
-        for (int b = 0; b < W; b++) {
-            std::cout << kernel[a][b] << " ";
-        }
-        std::cout << std::endl;
-    }
+    /*std::cout << "Kernel is: " << std::endl;
+      for (int a = 0; a < W; a++) {
+      for (int b = 0; b < W; b++) {
+      std::cout << kernel[a][b] << " ";
+      }
+      std::cout << std::endl;
+      }
+      */
 
 
 
@@ -181,13 +181,15 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image) {
     for (int x = 0; x < W; ++x)
         for (int y = 0; y < W; ++y)
             kernel[x][y] /= sum;
-    std::cout << "Kernel is: " << std::endl;
-    for (int a = 0; a < W; a++) {
-        for (int b = 0; b < W; b++) {
-            std::cout << kernel[a][b] << " ";
-        }
-        std::cout << std::endl;
-    }
+    /*std::cout << "Kernel is: " << std::endl;
+      for (int a = 0; a < W; a++) {
+      for (int b = 0; b < W; b++) {
+      std::cout << kernel[a][b] << " ";
+      }
+      std::cout << std::endl;
+      }
+
+*/
 
     omp_set_num_threads(omp_get_num_procs());
 
@@ -196,12 +198,9 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image) {
     int radius = W;
     double val1 = 0, val2 = 0, val3 = 0;
 
-    // 1) loop over all pixels
     #pragma omp parallel for shared(image) private(i,j,val1,val2,val3)
     for (i = 0; i < image.cols; i++) {
-        // std::cout << std::endl << "Column " << i << " Thread " << omp_get_thread_num() << std::endl;
         for (j = 0; j < image.rows; j++) {
-            // std::cout << j << ", ";
 
             // 2) loop over kernel
             int iy;
@@ -219,13 +218,13 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image) {
 
 
                     // std::cout << "Applying at positions: " << y << "," << x;
-                    /*std::cout << ". Value: " << image.at<cv::Vec3b>(y,x) << " * "
-                      << kernel[ix][iy] << std::endl;
+                    //std::cout << ". Value: " << image.at<cv::Vec3b>(y,x) << " * "
+                    //  << kernel[ix][iy] << std::endl;
 
-                      char str[20];
-                      std::scanf("%s", str);
+                    //  char str[20];
+                    //  std::scanf("%s", str);
 
-*/
+
                     val1 += (image.at<cv::Vec3b>(y, x)[0] * kernel[ix][iy]);
                     val2 += (image.at<cv::Vec3b>(y, x)[1] * kernel[ix][iy]);
                     val3 += (image.at<cv::Vec3b>(y, x)[2] * kernel[ix][iy]);
@@ -328,5 +327,22 @@ int main(int argc, char *argv[]) {
     imshow( "Display window", gaussianImage);                   // Show our image inside it.
     cv::imwrite("gaussian_omp.png", gaussianImage);
     cv::waitKey(0);
+
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    std::cout << "Fifth test: BGR->YCbCr blur with OpenCV. Starting timer..."
+        << std::endl;
+    startTime = omp_get_wtime();
+    cv::cvtColor(image, image, cv::COLOR_BGR2YCrCb);
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Conversion with OpenMP took " << duration << " seconds.\n" << std::endl;
+
+    image = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    std::cout << "Sixth test: Gaussian blur with OpenCV. Starting timer..."
+        << std::endl;
+    startTime = omp_get_wtime();
+    cv::GaussianBlur(image, image, cv::Size(5,5), 1 );
+    duration = omp_get_wtime() - startTime;
+    std::cout << "\nFINISHED. Gaussian blur with OpenCV took " << duration << " seconds.\n" << std::endl;
     return  0;
+
 }
