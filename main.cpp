@@ -71,9 +71,9 @@ void convertToYCbCr_omp_2(cv::Mat image, int num_procs) {
     omp_set_num_threads(num_procs);
     int i, j;
 
-    #pragma omp parallel for shared(image) private(i)
+#pragma omp parallel for shared(image) private(i)
     for (i = 0; i < image.cols; i++) {
-        #pragma omp parallel for shared(image) private(j)
+#pragma omp parallel for shared(image) private(j)
         for (j = 0; j < image.rows; j++) {
 
             // R, G, B values
@@ -180,7 +180,7 @@ cv::Mat applyGaussianBlur_omp(cv::Mat image, int num_procs) {
     int radius = W;
     double val1 = 0, val2 = 0, val3 = 0;
 
-    #pragma omp parallel for shared(image) private(i,j,val1,val2,val3) 
+#pragma omp parallel for shared(image) private(i,j,val1,val2,val3) 
     for (i = 0; i < image.cols; i++) {
         for (j = 0; j < image.rows; j++) {
 
@@ -240,9 +240,9 @@ cv::Mat applyGaussianBlur_omp_2(cv::Mat image, int num_procs) {
     int i, j;
     int radius = W;
     double val1 = 0, val2 = 0, val3 = 0;
-    #pragma omp parallel for shared(image) private(i) 
+#pragma omp parallel for shared(image) private(i) 
     for (i = 0; i < image.cols; i++) {
-        #pragma omp parallel for shared(image) private(j,val1,val2,val3) 
+#pragma omp parallel for shared(image) private(j,val1,val2,val3) 
         for (j = 0; j < image.rows; j++) {
 
             // 2) loop over kernel
@@ -322,8 +322,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Conversion without OpenMP took " << duration << " seconds." << std::endl;
         // imshow( "Display window", image);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("converted_normal.png", image);
     }
-    cv::imwrite("converted_normal.png", image);
 
     std::cout << "Second test: BGR -> YCbCr WITH parallelization and 4 threads. Starting timer..." 
         << std::endl;
@@ -338,8 +339,9 @@ int main(int argc, char *argv[]) {
         // imshow( "Display window", image);                   // Show our image inside it.
         // cv::imwrite("converted_omp.png", image);
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("converted_omp_4.png", image);
     }
-    cv::imwrite("converted_omp_4.png", image);
 
     std::cout << "Third test: BGR -> YCbCr WITH parallelization and 8 threads. Starting timer..." 
         << std::endl;
@@ -354,8 +356,9 @@ int main(int argc, char *argv[]) {
         // imshow( "Display window", image);                   // Show our image inside it.
         // cv::imwrite("converted_omp.png", image);
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("converted_omp_8.png", image);
     }
-    cv::imwrite("converted_omp_8.png", image);
 
     std::cout << "Fourth test: BGR -> YCbCr WITH \"double\" parallelization and 4 threads. Starting timer..." 
         << std::endl;
@@ -370,8 +373,9 @@ int main(int argc, char *argv[]) {
         // imshow( "Display window", image);                   // Show our image inside it.
         // cv::imwrite("converted_omp.png", image);
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("converted_omp_double_4.png", image);
     }
-    cv::imwrite("converted_omp_double_4.png", image);
 
     logs << "BGR->YCbCr w/ OpenMP, double, 8 kernels\n";
     std::cout << "Fifth test: BGR -> YCbCr WITH \"double\" parallelization and 8 threads. Starting timer..." 
@@ -386,8 +390,9 @@ int main(int argc, char *argv[]) {
         // imshow( "Display window", image);                   // Show our image inside it.
         // cv::imwrite("converted_omp.png", image);
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("converted_omp_double_8.png", image);
     }
-    cv::imwrite("converted_omp_double_8.png", image);
 
     logs << "Blur\n";
     std::cout <<"Sixth test: Gaussian blur without parallelization. Starting timer..."
@@ -401,8 +406,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Blurring without OpenMP took " << duration << " seconds." << std::endl;
         // imshow( "Display window", gaussianImage);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("gaussian_normal.png", gaussianImage);
     }
-    cv::imwrite("gaussian_normal.png", gaussianImage);
 
     logs << "Blur w/ OpenMP, simple, 4 kernels\n";
     std::cout << "Seventh test: Gaussian blur WITH parallelization, simple, 4. Starting timer..."
@@ -416,8 +422,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Blurring with OpenMP, simple, 4 took " << duration << " seconds." << std::endl;
         // imshow( "Display window", gaussianImage);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("gaussian_omp_4.png", gaussianImage);
     }
-    cv::imwrite("gaussian_omp_4.png", gaussianImage);
 
 
     logs << "Blur w/ OpenMP, simple, 8 kernels\n";
@@ -432,8 +439,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Blurring with OpenMP, simple, 8 took " << duration << " seconds." << std::endl;
         // imshow( "Display window", gaussianImage);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("gaussian_omp_8.png", gaussianImage);
     }
-    cv::imwrite("gaussian_omp_8.png", gaussianImage);
 
     logs << "Blur w/ OpenMP, double, 4 kernels\n";
     std::cout << "Nineth test: Gaussian blur WITH parallelization, double, 4 threads. Starting timer..."
@@ -447,8 +455,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Blurring with OpenMP, double, 4 took " << duration << " seconds." << std::endl;
         // imshow( "Display window", gaussianImage);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("gaussian_omp_double_4.png", gaussianImage);
     }
-    cv::imwrite("gaussian_omp_double_4.png", gaussianImage);
 
     logs << "Blur w/ OpenMP, double, 8 kernels\n";
     std::cout << "Tenth test: Gaussian blur WITH parallelization, double, 8 threads. Starting timer..."
@@ -462,8 +471,9 @@ int main(int argc, char *argv[]) {
         std::cout << "FINISHED. Blurring with OpenMP, double, 8 took " << duration << " seconds." << std::endl;
         // imshow( "Display window", gaussianImage);                   // Show our image inside it.
         // cv::waitKey(0);
+        if (i == 9)
+            cv::imwrite("gaussian_omp_double_8.png", gaussianImage);
     }
-    cv::imwrite("gaussian_omp_double_8.png", gaussianImage);
 
     std::cout << "Eleventh test: RGB->YCbCr w/ OpenCV."
         << std::endl;
@@ -477,8 +487,9 @@ int main(int argc, char *argv[]) {
         duration = omp_get_wtime() - startTime;
         logs << duration << "\n";
         std::cout << "FINISHED. Conversion with OpenCV took " << duration << " seconds." << std::endl;
+        if (i == 9)
+            cv::imwrite("ycbcr_opencv.png", image);
     }
-    cv::imwrite("ycbcr_opencv.png", image);
 
     logs << "Gauss w/ OpenCV\n";
     std::cout << "Twelveth test: Gaussian blur w/ OpenCV."
@@ -492,8 +503,9 @@ int main(int argc, char *argv[]) {
         duration = omp_get_wtime() - startTime;
         logs << duration << "\n";
         std::cout << "FINISHED. Gaussian blur with OpenCV took " << duration << " seconds." << std::endl;
+        if (i == 9)
+            cv::imwrite("gaussian_opencv.png", image);
     }
-    cv::imwrite("gaussian_opencv.png", image);
     logs.close();
     return  0;
 
