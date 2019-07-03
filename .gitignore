@@ -33,3 +33,7 @@
 
 *.png
 *.jpg
+*.orig
+*.swp
+*.kate-swp
+
