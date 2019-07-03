@@ -1,7 +1,7 @@
 # gaussian-openmp
 
-#Usage
-./blur <image>
+# Usage
+./blur \<image\>
 
-#Compile
-make
+# Compile
+use make or the compilestring in the makefile.
